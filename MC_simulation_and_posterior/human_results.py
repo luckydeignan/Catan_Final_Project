@@ -1,5 +1,13 @@
 import matplotlib.pyplot as plt
 
+'''
+Human results from experiment
+
+This file plots each of them
+
+Was also used to transition into posterior_analysis.py which plots model vs. human data together
+'''
+
 human_data = [
     [('Settlement', (4, 6)), ('City', (4, 2)), ('City', (4, 2)), ('City', (2, 5)), ('Settlement', (4, 6)), ('Settlement', (4, 6)), ('City', (4, 2)), 
      ('City', (4, 2)), ('City', (4, 2)), ('City', (4, 2)), ('City', (4, 2)), ('City', (4, 2)), ('Settlement', (6, 3))], 

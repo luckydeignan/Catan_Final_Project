@@ -19,6 +19,7 @@ class Hex:
 class Board:
     def __init__(self):
         # Maps a hex (e.g., 'A') -> List of surrounding intersection coordinates
+        # A to J is top to bottom, left to right hexes
         self.hexes = {
             "A": {"intersections": [(1, 1), (0, 2), (1, 3), (2, 3), (3, 2), (2, 1)],
                   "hex_type": None},
@@ -120,25 +121,5 @@ class Board:
         return self.intersections[row, col]['adjacent_hexes']
 
 
-if __name__ == '__main__':
 
-    board = Board()
-
-    print("Initial state of the board:")
-    print(board.hexes)
-
-    hex_and_tokens = [('sheep', 3), ('desert', None), ('wheat', 6), ('lumber', 9), ('lumber', 4), 
-                      ('sheep', 5), ('sheep', 12), ('sheep', 8), ('ore', 11), ('lumber', 9)]
-    board.generate_board(hex_and_tokens)
-
-    print("\nAfter generating board:")
-    print(board.intersections)
-    print("Adjacent edges:", board.edges)
-    print("Board graph:", board.graph)
-
-    intersection = (1, 1)  # Row 1, Column 2
-    intersecting_hexes = board.get_intersecting_hexes(intersection)
-    print(f"\nHexes at intersection {intersection}:")
-    for hex in intersecting_hexes:
-        print(f"Resource Type: {hex.resource_type}, Number Token: {hex.number_token}")
     

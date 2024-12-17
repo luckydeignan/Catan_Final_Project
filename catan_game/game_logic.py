@@ -1,13 +1,10 @@
 import random
 from core_classes import Board, Hex
-from player_and_agent import Player, Agent
+from player_and_agent import Agent
 import matplotlib.pyplot as plt
-from matplotlib.patches import RegularPolygon
-import matplotlib.lines as mlines
 import numpy as np
 from matplotlib.patches import Polygon
 import matplotlib.pyplot as plt
-import threading
 import os
 import pickle
 
@@ -18,17 +15,23 @@ class Game:
         self.current_turn = 0
         self.round_number = 0
         self.victory_points_to_win = victory_points_to_win
-        self.starting_loc = starting_loc
-        self.last_action = []
-        self.last_dice_roll = None
-        self.robber_loc = None
+        self.starting_loc = starting_loc # starting location of single player // right now configured specifically for single-player games
+
+
+        self.last_action = [] # used to update visualization on last turn achieved
+        self.last_dice_roll = None # last die roll
+        self.robber_loc = None # Hex instance, where robber currently is located
+       
+        self.robber_prob = robber_prob # hyperparameter indicating how often robber attacks on a 7 roll
+        self.trading_prob = trading_prob # hyperparameter indicating how newly implemented probabilistic trade mechanism executed
+        self.softmax_temp = softmax_temp # hyperparameter controlling softmax temperature used to determine player actions
+
+        self.game_log = [] # log of game events
+        self.structures = set() # set of everything built thus far; used to condition Monte Carlo simulation
         self.first_time = True # used as a marker to reset resources when player hits 4 VP // for experimental purposes
-        self.robber_prob = robber_prob
-        self.trading_prob = trading_prob
-        self.softmax_temp = softmax_temp
-        self.game_log = []
-        self.structures = set()
-        self.game_data = {
+
+
+        self.game_data = { # game_data used for debugging purposes
     "game data": [],
     "board layout": [],  # Corresponds to board state instance
     "player info": [], # corresponds to instance of player for each round
@@ -42,14 +45,8 @@ class Game:
         "softmax temperature": softmax_temp,  # float(soft_max_temperature)
     },
 }
-        self.pickle_path = str()
-
-
-        # Ensure file is created in the current working directory
-        current_directory = os.getcwd()  # Get current working directory
-        file_name = 'simulation_data.pkl'
-        file_path = os.path.join(current_directory, file_name)
-        self.pickle_path = file_path
+        
+        self.pickle_path = r'C:\Users\ljdde\Downloads\9.66\Catan_Final_Project\catan_game\simulation_data.pkl' # simulation_data path, used for debugging
 
         
 
@@ -64,16 +61,16 @@ class Game:
         ('sheep', 12), ('sheep', 8), ('ore', 11), ('lumber', 9)
         ]
         """
-        self.board.generate_board(hex_and_tokens)
+        self.board.generate_board(hex_and_tokens) # generate board
         colors = ['orange', 'white', 'red', 'blue']
-        for i in range(player_count):
+        for i in range(player_count): # add players
             player = Agent(player_color=colors[i])
             self.players.append(player)
         
-        for p in self.players:
+        for p in self.players: # based on given starting location, build player's first settlement
             for r in ['lumber', 'brick', 'wheat', 'sheep']:
                 p.resources[r] += 1
-            p.available_intersections.add(self.starting_loc)
+            p.available_intersections.add(self.starting_loc) # would need to be modified if extended to multiplayer
             p.build_settlement(self.board, self.starting_loc)
             
 
@@ -92,13 +89,13 @@ class Game:
         
         # Step 3: execute probabilistic trade mechanism and update last_action what resources were received
         for p in self.players:
-            p.traded = False
+            p.traded = False 
             if not p.gained_resource:
                 if self.last_dice_roll != 7:
                     if random.random() < self.trading_prob:
                         resource = p.trade_for(self)
                         p.resources[resource] += 1
-                        p.traded = True
+                        p.traded = True # used to ensure consistent strategies if player traded during their turn
                         self.last_action.append(f"{p.color} received {resource} from bank")
                     else:
                         self.last_action.append(f"{p.color} received nothing")
@@ -110,10 +107,7 @@ class Game:
 
 
         # Step 4: Let the player decide and execute an action
-        if isinstance(current_player, Agent):
-            actions, targets = current_player.choose_action(self)
-        else:
-            action, target = self.prompt_player_action(current_player)
+        actions, targets = current_player.choose_action(self) 
         
         if actions:
             for i in range(len(actions)):
@@ -128,7 +122,7 @@ class Game:
         self.game_data['player info'].append(current_player)
         self.game_data['game data'].append(self)
         self.game_data['number of rounds'] += 1
-        # dump Pickle data
+        # dump Pickle simulation_data // used for debugging
         with open(self.pickle_path, 'wb') as file:
             pickle.dump(self.game_data, file)
         
@@ -175,11 +169,11 @@ class Game:
                         if not eligible_hexes:
                             import pdb; pdb.set_trace()
                         random_hex = random.choice(list(eligible_hexes))
-                        if random_hex.robber_blocking == False:
-                            random_hex.robber_blocking = True
-                            if isinstance(self.robber_loc, Hex):
+                        if random_hex.robber_blocking == False: # ensure robber doesn't stay in same location
+                            random_hex.robber_blocking = True # move robber
+                            if isinstance(self.robber_loc, Hex): # if robber was on a hex prior to turn, take the robber off
                                 self.robber_loc.robber_blocking = False
-                            self.robber_loc = random_hex
+                            self.robber_loc = random_hex # update new robber_loc
                             break
                     # steal 1 random resource
                     resources = ['lumber', 'brick', 'sheep', 'wheat', 'ore']
@@ -190,21 +184,15 @@ class Game:
                             p.resources[random_resource] -= 1
                             self.last_action.append(f'Robber stole {random_resource} from {p.color}')
                             break
-                else:
+                else: # robber doesn't attack
                     if isinstance(self.robber_loc, Hex):
-                        self.robber_loc.robber_blocking = False
-                    self.robber_loc = None
+                        self.robber_loc.robber_blocking = False # wherever robber was, take him off that hex
+                    self.robber_loc = None # update robber hex
                     self.last_action.append("Robber blocked")
                     break
 
         
 
-
-    def prompt_player_action(self, player):
-        """Prompt a human player for an action."""
-        # Example: Ask for input (this could be replaced with a UI in a full implementation)
-        print(f"{player.color}, what would you like to do?")
-        return "wait", None  # Placeholder for user input
 
     def check_winner(self, player):
         """Check if a player has won the game."""
@@ -303,39 +291,20 @@ class Game:
     
 
 if __name__ == "__main__":
+    # run the code to see an example game done in action
+
     hex_and_tokens = [
         ('sheep', 3), ('desert', 0), ('wheat', 6), 
         ('lumber', 9), ('lumber', 4), ('sheep', 5), 
         ('sheep', 12), ('sheep', 8), ('ore', 11), ('lumber', 9)
     ]
     
-    game = Game(robber_prob=.5)
+    game = Game()
     game.initialize_game(hex_and_tokens, player_count=1)
-    lucky = game.players[0]
-    lucky.resources = {
-        'lumber': 3,
-        'brick': 3,
-        'sheep': 1,
-        'wheat': 1,
-        'ore': 0
-    }
 
     
     game_over = False
     while not game_over:
-        
-        
-        ## testing code to test evaluation metric and different softmax performance
-        # evaluations = game.players[0].evaluate_intersection_value(game.board)
-        # print(sorted(evaluations.keys(), key = lambda x: evaluations[x], reverse= True))
-        # scores = sorted(evaluations.values(), reverse= True)
-        # first_four = scores[:4]
-        # fourprobabilities = game.players[0].softmax_with_temperature(first_four, T=.25)
-        # probabilities = game.players[0].softmax_with_temperature(scores, T=.5)
-        # print(fourprobabilities)
-        # print(probabilities)
-
-
         game.visualize_board()
         #import pdb; pdb.set_trace()
         game_over = game.play_turn()

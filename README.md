@@ -1,5 +1,11 @@
 # Catan_Final_Project
 
-Repository for 9.66 Computational Cognitive Science Final Project 2024. 
+Repository for Lucky Deignan 9.66 Computational Cognitive Science Final Project 2024. 
 
-NOTE: If you are an instructor analyzing this repo, just know that I have not yet cleaned up and organized my code, so it may be confusing until I do that.
+Basic structure of code:
+
+-- catan_game: scripts related to functionality of the Catan game itself
+
+-- data: Monte Carlo simulation data collected during experiments
+
+-- MC_simulation_poster: code for implementation of Monte Carlo simulation. data analysis, and experimental design/generation

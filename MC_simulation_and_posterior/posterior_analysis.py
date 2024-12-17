@@ -21,7 +21,7 @@ def analyze_data(exps):
     N_humans = 13
 
     for num in exps:
-        vp_path = 'C:\Users\ljdde\Downloads\9.66\Final_Project\data\newsm_raw_experiment_data\experiment_0{num}_raw_vp_data.pkl'
+        vp_path = r'C:\Users\ljdde\Downloads\9.66\Catan_Final_Project\data\newsm_raw_experiment_data\experiment_0{num}_raw_vp_data.pkl'
 
 
         with open(vp_path, 'rb') as file:

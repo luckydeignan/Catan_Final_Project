@@ -4,7 +4,16 @@ import pickle
 import os
 from datetime import datetime
 
+'''
+This file includes: 
 
+First, info needed to execute each of the 5 experiments is saved as variables (exp1, ... , exp5)
+
+Second, function for simulating game in a way that conditions it to pass through an intermediate game state
+
+Third, a model that runs Monte Carlo simulation until there are an arbitrary # of conditioned samples 
+
+'''
 ### BELOW I WILL STORE THE HEX_AND_TOKEN AND FROZEN_GAME.STRUCTURES FOR EACH EXPERIMENT
 
 ## EXPERIMENT 1: INITIAL TOY EXAMPLE
@@ -84,14 +93,19 @@ exp5 = (5, symmetric_scenario, sym_loc, d_structures5)
 
 
 def simulate_game(hex_and_tokens, desired_structures, loc):
+    '''
+    Simulates game
+    Returns none if simulation didn't pass through desired state
+    Else, return the game itself
+    '''
     game = game_logic.Game(starting_loc=loc)
     game.initialize_game(hex_and_tokens, player_count=1)
     game_over = False
-    hit_4 = False
+    hit_4 = False 
     while not game_over:
         game_over = game.play_turn()
         current_score = game.players[game.current_turn].score
-        if not hit_4 and not game.structures <= desired_structures:
+        if not hit_4 and not game.structures <= desired_structures: # ensuring simulation is only returned if the beginning portion led to intermediate state
             return None
         if current_score == 4 and not hit_4:
             hit_4 = True
@@ -108,7 +122,7 @@ def model(exp, num_simulations):
         - hex_and_tokens (list of tuples) which indicates board layout
         - desired_structures (set) indicating how first four VPs are achieved
         - starting_loc (tuple) indicating where player starts
-    - num_simulations: number of times simulation is run before stopping
+    - num_simulations: number of samples needed before stopping
     Outputs:
         - none
         - dumps vp data into pickle file. data takes the form of dict:
@@ -125,7 +139,9 @@ def model(exp, num_simulations):
     while num_samples < num_simulations:
         trials += 1
         if trials % 500 == 0:
-            print(num_samples)
+            print(num_samples) # track progress
+
+
         end_game = simulate_game(h_and_t, desired_structures, starting_loc)
         if end_game is not None:
             #below is for final vp given first 4
@@ -137,10 +153,16 @@ def model(exp, num_simulations):
     print(datetime.now().time())
 
 
-    final_vps_path = 'C:\Users\ljdde\Downloads\9.66\Final_Project\data\newsm_raw_experiment_data\experiment_0{num}_raw_vp_data.pkl'
+    final_vps_path = r'C:\Users\ljdde\Downloads\9.66\Catan_Final_Project\data\newsm_raw_experiment_data\experiment_0{num}_raw_vp_data.pkl'
     with open(final_vps_path, 'wb') as file:
         pickle.dump(final_vps, file)
 
-experiments = [exp1, exp2, exp3, exp4, exp5]
 
-model(exp5, 5000)
+# if __name__ == '__main__':
+#     '''
+#     running this code runs Monte Carlo sample for each experiment (100 samples each experiment)
+#     '''
+#     experiments = [exp1, exp2, exp3, exp4, exp5]
+
+#     for e in experiments:
+#         model(e, 100)
